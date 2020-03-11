@@ -48,10 +48,6 @@ resource "kubernetes_namespace" "cert-manager" {
     name = "cert-manager"
   }
 
-  //  lifecycle {
-  //    prevent_destroy = true
-  //  }
-
 }
 
 # Get the JetStack Helm repository...
@@ -74,14 +70,15 @@ resource "helm_release" "cert-manager" {
     data.helm_repository.jetstack
   ]
 
+  #version    = "v0.14.0" # Latest stable, but latest is at: 0.14.0-alpha.1
+  version    = "v0.14.0-alpha.1"
   name       = "cert-manager"
   repository = data.helm_repository.jetstack.metadata[0].name
   chart      = "jetstack/cert-manager"
   namespace  = "cert-manager"
-
-  //  lifecycle {
-  //    prevent_destroy = true
-  //  }
+  wait       = true
+  timeout    = 900 # In seconds, 15 minutes
+  #verify = true
 
 }
 
@@ -96,12 +93,8 @@ resource "helm_release" "cert-manager" {
 resource "kubernetes_namespace" "rancher" {
 
   metadata {
-    name = "rancher"
+    name = "cattle-system"
   }
-
-  //  lifecycle {
-  //    prevent_destroy = true
-  //  }
 
 }
 
@@ -121,19 +114,26 @@ data "helm_repository" "rancher" {
 resource "helm_release" "rancher" {
 
   depends_on = [
+    kubernetes_namespace.cert-manager,
+    helm_release.cert-manager,
     kubernetes_namespace.rancher,
     data.helm_repository.rancher
   ]
 
+  #version    = "v2.3.5" # Latest stable, but RC is at 2.4.0-rc2
+  #version    = "v2.4.0"
   name       = "rancher"
   repository = data.helm_repository.rancher.metadata[0].name
   chart      = "rancher-stable/rancher"
-  #namespace  = "rancher"
+  namespace  = "cattle-system"
+  wait       = true
+  timeout    = 900 # In seconds, 15 minutes
+//  #verify = true
 
-  set {
-    name  = "addLocal"
-    value = "true"
-  }
+////  set {
+////    name  = "addLocal"
+////    value = "true"
+////  }
 
   set {
     name  = "hostname"
@@ -141,19 +141,40 @@ resource "helm_release" "rancher" {
   }
 
   set {
-    name  = "ingree.tls.source"
-    value = "letsEncyrt"
+    name  = "ingress.tls.source"
+    value = "rancher"
   }
 
-  set {
-    name  = "letsEncrypt.email"
-    value = "lets.encypt@morsley.io"
-  }
-
-  //  lifecycle {
-  //    prevent_destroy = true
-  //  }
-
+////  set {
+////    name  = "ingress.tls.source"
+////    value = "letsEncrypt"
+////  }
+//
+////  set {
+////    name  = "letsEncrypt.email"
+////    value = "lets.encrypt@morsley.io"
+////  }
+////
+////  set {
+////    name  = "webhook.enabled"
+////    value = "false"
+////  }
+////
+////  set {
+////    name  = "ingressShim.defaultIssuerName"
+////    value = "letsencrypt-staging" # -prod when live
+////  }
+////
+////  set {
+////    name  = "ingressShim.defaultIssuerKind"
+////    value = "ClusterIssuer"
+////  }
+////
+////  set {
+////    name  = "ingressShim.defaultIssuerGroup"
+////    value = "cert-manager.io"
+////  }
+////  
 }
 
 //resource "null_resource" "is-rancher-ready" {
