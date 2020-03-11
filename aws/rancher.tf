@@ -42,19 +42,30 @@ provider "kubernetes" {
 
 # https://terraform.io/docs/providers/kubernetes/index.html
 
-resource "kubernetes_namespace" "cert-manager" {
+//data "kubernetes_namespace" "kube-system" {
+//
+//  metadata {
+//    name = "kube-system"
+//    labels = {
+//      "certmanager.k8s.io/disablevalidation" = "true"
+//    }
+//  }
+//
+//}
 
-  metadata {
-    name = "cert-manager"
-  }
-
-}
+//resource "kubernetes_namespace" "cert-manager" {
+//
+//  metadata {
+//    name = "cert-manager"
+//  }
+//
+//}
 
 # Get the JetStack Helm repository...
 
 data "helm_repository" "jetstack" {
 
-  depends_on = [kubernetes_namespace.cert-manager]
+  #depends_on = [kubernetes_namespace.cert-manager]
 
   name = "jetstack"
   url  = "https://charts.jetstack.io"
@@ -66,21 +77,25 @@ data "helm_repository" "jetstack" {
 resource "helm_release" "cert-manager" {
 
   depends_on = [
-    kubernetes_namespace.cert-manager,
+    #kubernetes_namespace.cert-manager,
     data.helm_repository.jetstack
   ]
 
   #version    = "v0.14.0" # Latest stable, but latest is at: 0.14.0-alpha.1
-  version    = "v0.14.0-alpha.1"
+  #version    = "v0.14.0-alpha.1"
   name       = "cert-manager"
   repository = data.helm_repository.jetstack.metadata[0].name
   chart      = "jetstack/cert-manager"
-  namespace  = "cert-manager"
-  wait       = true
-  timeout    = 900 # In seconds, 15 minutes
+  #namespace  = "cert-manager"
+  #wait       = true
+  #timeout    = 900 # In seconds, 15 minutes
   #verify = true
 
 }
+
+//output "jetstack_helm_repository" {
+//  value = data.helm_repository.jetstack #.metadata #[0].name
+//}
 
 # kubectl get-pods --namespace cert-manager
 
@@ -90,19 +105,19 @@ resource "helm_release" "cert-manager" {
 
 
 
-resource "kubernetes_namespace" "rancher" {
-
-  metadata {
-    name = "cattle-system"
-  }
-
-}
+//resource "kubernetes_namespace" "rancher" {
+//
+//  metadata {
+//    name = "cattle-system"
+//  }
+//
+//}
 
 # Get the Rancher Helm repository...
 
 data "helm_repository" "rancher" {
 
-  depends_on = [kubernetes_namespace.rancher]
+  #depends_on = [kubernetes_namespace.rancher]
 
   name = "rancher-stable"
   url  = "https://releases.rancher.com/server-charts/stable"
@@ -114,9 +129,9 @@ data "helm_repository" "rancher" {
 resource "helm_release" "rancher" {
 
   depends_on = [
-    kubernetes_namespace.cert-manager,
+    #kubernetes_namespace.cert-manager,
     helm_release.cert-manager,
-    kubernetes_namespace.rancher,
+    #kubernetes_namespace.rancher,
     data.helm_repository.rancher
   ]
 
@@ -125,36 +140,36 @@ resource "helm_release" "rancher" {
   name       = "rancher"
   repository = data.helm_repository.rancher.metadata[0].name
   chart      = "rancher-stable/rancher"
-  namespace  = "cattle-system"
-  wait       = true
-  timeout    = 900 # In seconds, 15 minutes
+  #namespace  = "cattle-system"
+  #wait       = true
+  #timeout    = 900 # In seconds, 15 minutes
 //  #verify = true
 
-////  set {
-////    name  = "addLocal"
-////    value = "true"
-////  }
+  set {
+    name  = "addLocal"
+    value = "true"
+  }
 
   set {
     name  = "hostname"
     value = "rancher.morsley.io"
   }
 
-  set {
-    name  = "ingress.tls.source"
-    value = "rancher"
-  }
+//  set {
+//    name  = "ingress.tls.source"
+//    value = "rancher"
+//  }
 
-////  set {
-////    name  = "ingress.tls.source"
-////    value = "letsEncrypt"
-////  }
-//
-////  set {
-////    name  = "letsEncrypt.email"
-////    value = "lets.encrypt@morsley.io"
-////  }
-////
+#  set {
+#    name  = "ingress.tls.source"
+#    value = "letsEncrypt"
+#  }
+
+#  set {
+#    name  = "letsEncrypt.email"
+#    value = "lets.encrypt@morsley.io"
+#  }
+
 ////  set {
 ////    name  = "webhook.enabled"
 ////    value = "false"
@@ -195,5 +210,5 @@ resource "helm_release" "rancher" {
 //  lifecycle {
 //    prevent_destroy = true
 //  }
-//  
+//
 //}
