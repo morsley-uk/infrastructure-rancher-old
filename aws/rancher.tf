@@ -22,15 +22,19 @@
 
 provider "kubernetes" {
 
-  load_config_file       = true
+  load_config_file = true
   #config_path            = "rancher/${var.kube_config_filename}"
   #config_context_cluster = var.cluster_name
 
 }
 
+# Helm: https://terraform.io/docs/providers/helm/index.html
+
 # -----------------------
 # Cert-Manager - JetStack
 # -----------------------
+
+# GitHub --> https://github.com/jetstack/cert-manager
 
 # Jetstack - Kubernetes --> https://cert-manager.io/docs/installation/kubernetes
 
@@ -44,9 +48,9 @@ resource "kubernetes_namespace" "cert-manager" {
     name = "cert-manager"
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  //  lifecycle {
+  //    prevent_destroy = true
+  //  }
 
 }
 
@@ -73,10 +77,11 @@ resource "helm_release" "cert-manager" {
   name       = "cert-manager"
   repository = data.helm_repository.jetstack.metadata[0].name
   chart      = "jetstack/cert-manager"
+  namespace  = "cert-manager"
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  //  lifecycle {
+  //    prevent_destroy = true
+  //  }
 
 }
 
@@ -86,15 +91,17 @@ resource "helm_release" "cert-manager" {
 # Rancher
 # -------
 
+
+
 resource "kubernetes_namespace" "rancher" {
 
   metadata {
     name = "rancher"
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  //  lifecycle {
+  //    prevent_destroy = true
+  //  }
 
 }
 
@@ -118,9 +125,10 @@ resource "helm_release" "rancher" {
     data.helm_repository.rancher
   ]
 
-  name       = "rancher-stable"
+  name       = "rancher"
   repository = data.helm_repository.rancher.metadata[0].name
   chart      = "rancher-stable/rancher"
+  #namespace  = "rancher"
 
   set {
     name  = "addLocal"
@@ -132,9 +140,19 @@ resource "helm_release" "rancher" {
     value = "rancher.morsley.io"
   }
 
-  lifecycle {
-    prevent_destroy = true
+  set {
+    name  = "ingree.tls.source"
+    value = "letsEncyrt"
   }
+
+  set {
+    name  = "letsEncrypt.email"
+    value = "lets.encypt@morsley.io"
+  }
+
+  //  lifecycle {
+  //    prevent_destroy = true
+  //  }
 
 }
 
